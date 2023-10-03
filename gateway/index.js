@@ -6,9 +6,9 @@ const app = express();
 
 app.use(cors());
 
-app.use("/customer", proxy("http://localhost:8001"));
-app.use("/shopping", proxy("http://localhost:8002"));
-app.use("/", proxy("http://localhost:8003")); //products
+app.use("/customer", proxy("http://localhost:8002"));
+app.use("/shopping", proxy("http://localhost:8003"));
+app.use("/", proxy("http://localhost:8001")); //products
 
 app.listen(8000, () => {
   console.log("Gateway is listening on 8000");
