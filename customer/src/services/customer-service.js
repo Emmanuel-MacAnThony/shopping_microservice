@@ -161,6 +161,7 @@ class CustomerService {
     payload = JSON.parse(payload);
 
     const { event, data } = payload;
+    console.log("payload", payload);
 
     const { userId, product, order, qty } = data;
 

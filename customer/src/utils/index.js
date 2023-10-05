@@ -1,7 +1,14 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const amqlib = require("amqplib");
 
-const { APP_SECRET } = require("../config");
+const {
+  APP_SECRET,
+  QUEUE_NAME,
+  MESSAGE_BROKER_URL,
+  EXCHANGE_NAME,
+  CUSTOMER_BINDING_KEY,
+} = require("../config");
 
 //Utility functions
 module.exports.GenerateSalt = async () => {
@@ -47,5 +54,39 @@ module.exports.FormateData = (data) => {
     return { data };
   } else {
     throw new Error("Data Not found!");
+  }
+};
+
+// message broker
+module.exports.CreateChannel = async () => {
+  try {
+    const connection = await amqlib.connect(MESSAGE_BROKER_URL);
+    const channel = await connection.createChannel();
+    await channel.assertExchange(EXCHANGE_NAME, "direct", false);
+    return channel;
+  } catch (error) {
+    throw error;
+  }
+};
+
+module.exports.PublishMessage = async (channel, binding_key, message) => {
+  try {
+    await channel.publish(EXCHANGE_NAME, binding_key, Buffer.from(message));
+  } catch (error) {
+    throw error;
+  }
+};
+
+module.exports.SubscribeMessage = async (channel, service) => {
+  try {
+    const appQueue = await channel.assertQueue(QUEUE_NAME);
+    channel.bindQueue(appQueue.queue, EXCHANGE_NAME, CUSTOMER_BINDING_KEY);
+    channel.consume(appQueue.queue, (data) => {
+      service.SubscribeEvents(data.content.toString());
+      channel.ack(data);
+      console.log("customer received event =======", data);
+    });
+  } catch (error) {
+    throw error;
   }
 };
